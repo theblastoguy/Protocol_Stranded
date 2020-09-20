@@ -1,0 +1,7 @@
+.DS_STore
+*.log
+*.pyc
+.venv
+.vscode
+__pycache__
+*.tiled-session
