@@ -8,9 +8,12 @@ import arcade.gui
 import logging
 import sys
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
-SCREEN_TITLE = "Qwerty and Ruan's PyWeek 30 Entry"
+VERSION = "v0.1"
+
+GAMENAME = "Qwerty and Ruan's PyWeek 30 Entry"
+SCREEN_TITLE = GAMENAME
 
 # How big are our image tiles?
 SPRITE_IMAGE_SIZE = 32
@@ -543,13 +546,16 @@ class MainMenu(arcade.View):
 
     def on_draw(self):
         arcade.start_render()
-        arcade.draw_text("Select Level To Load", SCREEN_WIDTH/2, SCREEN_HEIGHT-100,
-                         arcade.color.WHITE, font_size=50, anchor_x="center")  
+        arcade.draw_text("{}: version {}".format(GAMENAME, VERSION), SCREEN_WIDTH/2, SCREEN_HEIGHT-50,
+                         arcade.color.WHITE, font_size=20, anchor_x="center") 
+
+        arcade.draw_text("Select Level To Load", SCREEN_WIDTH/2, SCREEN_HEIGHT-120,
+                         arcade.color.WHITE, font_size=30, anchor_x="center")  
 
         from glob import glob
         levels = glob("resources/levels/*.tmx")
 
-        start = 150
+        start = 170
         level_select = []
 
         for level in levels:
@@ -558,8 +564,8 @@ class MainMenu(arcade.View):
                 menu=self,  # hack, passing in self
                 center_x=SCREEN_WIDTH/2,
                 center_y=SCREEN_HEIGHT-start,
-                width=250,
-                font_size=20,
+                width=500,
+                font_size=10,
                 # height=20,
                 anchor_x="center"
             )
