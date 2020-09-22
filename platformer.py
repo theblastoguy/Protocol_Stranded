@@ -19,7 +19,7 @@ SCREEN_TITLE = GAMENAME
 SPRITE_IMAGE_SIZE = 32
 
 # Scale sprites up or down
-SPRITE_SCALING_PLAYER = 0.5
+SPRITE_SCALING_PLAYER = 2
 SPRITE_SCALING_TILES = 1
 
 # Scaled sprite size for tiles
@@ -97,7 +97,7 @@ class PlayerSprite(arcade.Sprite):
         # main_path = ":resources:images/animated_characters/male_adventurer/maleAdventurer"
         # main_path = ":resources:images/animated_characters/zombie/zombie"
         # main_path = ":resources:images/animated_characters/robot/robot"
-        main_path = "resources/images/characters/character_femaleAdventurer"
+        main_path = "resources/images/characters/index"
 
         # Load textures for idle standing
         self.idle_texture_pair = arcade.load_texture_pair(f"{main_path}_idle.png")
@@ -105,9 +105,11 @@ class PlayerSprite(arcade.Sprite):
         self.fall_texture_pair = arcade.load_texture_pair(f"{main_path}_fall.png")
         self.splat_texture_pair = arcade.load_texture_pair(f"{main_path}_splat.png")
 
+        self.TOTAL_WALK_ANIMATIONS = 4
+
         # Load textures for walking
         self.walk_textures = []
-        for i in range(8):
+        for i in range(self.TOTAL_WALK_ANIMATIONS):
             texture = arcade.load_texture_pair(f"{main_path}_walk{i}.png")
             self.walk_textures.append(texture)
 
@@ -175,8 +177,8 @@ class PlayerSprite(arcade.Sprite):
 
             # Advance the walking animation
             self.cur_texture += 1
-            if self.cur_texture > 7:
-                self.cur_texture = 0
+            if self.cur_texture >= self.TOTAL_WALK_ANIMATIONS:
+                self.cur_texture = 1
             self.texture = self.walk_textures[self.cur_texture][self.character_face_direction]
 
 class GameWindow(arcade.Window):

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.4" tiledversion="1.4.2" name="Platformer" tilewidth="32" tileheight="32" tilecount="28" columns="0">
+<tileset version="1.4" tiledversion="1.4.2" name="Platformer" tilewidth="64" tileheight="96" tilecount="40" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <terraintypes>
   <terrain name="Water" tile="15"/>
@@ -87,5 +87,41 @@
  </tile>
  <tile id="28">
   <image width="32" height="32" source="../images/Blocks/waterTopBlock.png"/>
+ </tile>
+ <tile id="29">
+  <image width="64" height="96" source="../images/palmtree.png"/>
+ </tile>
+ <tile id="30">
+  <image width="32" height="32" source="../images/blocks/Sand.png"/>
+ </tile>
+ <tile id="31">
+  <image width="32" height="32" source="../images/blocks/Remains.png"/>
+ </tile>
+ <tile id="32">
+  <image width="32" height="32" source="../images/blocks/Rusted statue block.png"/>
+ </tile>
+ <tile id="33">
+  <image width="32" height="32" source="../images/blocks/Statue core.png"/>
+ </tile>
+ <tile id="34">
+  <image width="32" height="32" source="../images/blocks/Deep dirt.png"/>
+ </tile>
+ <tile id="35">
+  <image width="32" height="32" source="../images/blocks/Cannon.png"/>
+ </tile>
+ <tile id="36">
+  <image width="32" height="32" source="../images/blocks/l0_Water1.png"/>
+ </tile>
+ <tile id="37">
+  <image width="32" height="32" source="../images/blocks/l0_Water2.png"/>
+ </tile>
+ <tile id="38">
+  <image width="32" height="32" source="../images/blocks/Dirt.png"/>
+ </tile>
+ <tile id="39">
+  <image width="32" height="32" source="../images/blocks/Grass.png"/>
+ </tile>
+ <tile id="40">
+  <image width="32" height="32" source="../images/blocks/Sand - Grass.png"/>
  </tile>
 </tileset>
