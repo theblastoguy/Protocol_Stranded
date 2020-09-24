@@ -1,0 +1,13 @@
+{
+    "automappingRulesFile": "",
+    "commands": [
+    ],
+    "extensionsPath": "extensions",
+    "folders": [
+        "../images/backgrounds",
+        "../images/blocks",
+        "../images/characters",
+        "."
+    ],
+    "objectTypesFile": ""
+}
