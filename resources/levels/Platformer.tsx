@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.4" tiledversion="1.4.2" name="Platformer" tilewidth="64" tileheight="96" tilecount="40" columns="0">
+<tileset version="1.4" tiledversion="1.4.2" name="Platformer" tilewidth="64" tileheight="96" tilecount="46" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <terraintypes>
-  <terrain name="Water" tile="15"/>
+  <terrain name="Dirt" tile="41"/>
+  <terrain name="Water" tile="36"/>
+  <terrain name="Sand" tile="30"/>
  </terraintypes>
  <tile id="0">
   <image width="32" height="32" source="../images/Blocks/blobLeft.png"/>
@@ -91,7 +93,7 @@
  <tile id="29">
   <image width="64" height="96" source="../images/palmtree.png"/>
  </tile>
- <tile id="30">
+ <tile id="30" terrain="2,2,2,2">
   <image width="32" height="32" source="../images/blocks/Sand.png"/>
  </tile>
  <tile id="31">
@@ -118,10 +120,28 @@
  <tile id="38">
   <image width="32" height="32" source="../images/blocks/Dirt.png"/>
  </tile>
- <tile id="39">
+ <tile id="39" terrain=",,0,0">
   <image width="32" height="32" source="../images/blocks/Grass.png"/>
  </tile>
- <tile id="40">
+ <tile id="40" terrain="2,0,2,0">
   <image width="32" height="32" source="../images/blocks/Sand - Grass.png"/>
+ </tile>
+ <tile id="41" terrain="0,0,0,0">
+  <image width="32" height="32" source="../images/blocks/dirty.png"/>
+ </tile>
+ <tile id="42">
+  <image width="32" height="32" source="../images/blocks/app..png"/>
+ </tile>
+ <tile id="43">
+  <image width="32" height="32" source="../images/blocks/bananannannaanannaannaananananananananananannnnnanananannaan.png"/>
+ </tile>
+ <tile id="44">
+  <image width="32" height="32" source="../images/blocks/PalmButom.png"/>
+ </tile>
+ <tile id="45">
+  <image width="32" height="32" source="../images/blocks/PalmMiddle.png"/>
+ </tile>
+ <tile id="46">
+  <image width="32" height="32" source="../images/blocks/TopPalm.png"/>
  </tile>
 </tileset>
