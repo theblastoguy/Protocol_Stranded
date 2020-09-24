@@ -80,7 +80,7 @@ DISTANCE_TO_CHANGE_TEXTURE = 20
 
 class PlayerSprite(arcade.Sprite):
     """ Player Sprite """
-    def __init__(self, game):
+    def __init__(self, game, ladder_list=arcade.SpriteList):
         """ Init """
         # Let parent initialize
         super().__init__()
@@ -110,8 +110,15 @@ class PlayerSprite(arcade.Sprite):
         # Load textures for walking
         self.walk_textures = []
         for i in range(self.TOTAL_WALK_ANIMATIONS):
-            texture = arcade.load_texture_pair(f"{main_path}_walk{i}.png")
+            texture = arcade.load_texture_pair(f"{main_path}_run{i}.png")
             self.walk_textures.append(texture)
+
+        # Load textures for climbing
+        self.climbing_textures = []
+        texture = arcade.load_texture(f"{main_path}_climb0.png")
+        self.climbing_textures.append(texture)
+        texture = arcade.load_texture(f"{main_path}_climb1.png")
+        self.climbing_textures.append(texture)
 
         # Set the initial texture
         self.texture = self.idle_texture_pair[0]
@@ -128,6 +135,10 @@ class PlayerSprite(arcade.Sprite):
         # How far have we traveled:
         self.x_odometer = 0  # since changing texture
         self.y_odometer = 0  # since jumping
+
+        self.ladder_list = ladder_list
+        self.is_on_ladder = False
+
 
     def splat(self):
         if not self.dead:
@@ -146,8 +157,37 @@ class PlayerSprite(arcade.Sprite):
         # Are we on the ground?
         is_on_ground = physics_engine.is_on_ground(self)
 
+        # Are we on a ladder?
+        if len(arcade.check_for_collision_with_list(self, self.ladder_list)) > 0:
+            if not self.is_on_ladder:
+                self.is_on_ladder = True
+                self.pymunk.gravity = (0, 0)
+                self.pymunk.damping = 0.0001
+                self.pymunk.max_vertical_velocity = PLAYER_MAX_HORIZONTAL_SPEED
+        else:
+            if self.is_on_ladder:
+                self.pymunk.damping = 1.0
+                self.pymunk.max_vertical_velocity = PLAYER_MAX_VERTICAL_SPEED
+                self.is_on_ladder = False
+                self.pymunk.gravity = None
+
         # Add to the odometer how far we've moved
         self.x_odometer += dx
+
+        if self.is_on_ladder and not is_on_ground:
+            # Have we moved far enough to change the texture?
+            if abs(self.y_odometer) > DISTANCE_TO_CHANGE_TEXTURE:
+
+                # Reset the odometer
+                self.y_odometer = 0
+
+                # Advance the walking animation
+                self.cur_texture += 1
+
+            if self.cur_texture > 1:
+                self.cur_texture = 0
+            self.texture = self.climbing_textures[self.cur_texture]
+            return
 
         # Jumping animation
         if not is_on_ground:
@@ -181,14 +221,14 @@ class PlayerSprite(arcade.Sprite):
                 self.cur_texture = 1
             self.texture = self.walk_textures[self.cur_texture][self.character_face_direction]
 
-class GameWindow(arcade.Window):
+class GameView(arcade.View):
     """ Main Window """
 
-    def __init__(self, width, height, title):
+    def __init__(self):
         """ Create the variables """
 
         # Init the parent class
-        super().__init__(width, height, title)
+        super().__init__()
 
         # Player sprite
         self.player_sprite: Optional[PlayerSprite] = None
@@ -196,9 +236,9 @@ class GameWindow(arcade.Window):
         # Sprite lists we need
         self.player_list: Optional[arcade.SpriteList] = None
         self.wall_list: Optional[arcade.SpriteList] = None
-        self.bullet_list: Optional[arcade.SpriteList] = None
         self.item_list: Optional[arcade.SpriteList] = None
         self.fruit_list: Optional[arcade.SpriteList] = None
+        self.trees_list = None
         self.level_end_list: Optional[arcade.SpriteList] = None
 
         # Track the current state of what key is pressed
@@ -229,7 +269,6 @@ class GameWindow(arcade.Window):
 
         # Create the sprite lists
         self.player_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
         self.cannon_list = arcade.SpriteList()
         self.fruit_list = arcade.SpriteList()
         self.map_name = map_name
@@ -247,10 +286,11 @@ class GameWindow(arcade.Window):
         self.item_list = arcade.tilemap.process_layer(my_map, 'Movable Items', SPRITE_SCALING_TILES)
         self.cannon_list = arcade.tilemap.process_layer(my_map, 'Cannons', SPRITE_SCALING_TILES)
         self.fruit_list = arcade.tilemap.process_layer(my_map, 'Fruit', SPRITE_SCALING_TILES)
+        self.trees_list = arcade.tilemap.process_layer(my_map, 'Trees', SPRITE_SCALING_TILES)
         self.level_end_list = arcade.tilemap.process_layer(my_map, 'Player End', SPRITE_SCALING_TILES)
 
         # Create player sprite
-        self.player_sprite = PlayerSprite(game=self)
+        self.player_sprite = PlayerSprite(game=self, ladder_list=self.trees_list)
 
         try:
             player_start_tilemap_objs = arcade.tilemap.get_tilemap_layer(my_map, 'Player Start').tiled_objects
@@ -353,15 +393,16 @@ class GameWindow(arcade.Window):
             self.right_pressed = True
         elif key == arcade.key.UP:
             self.up_pressed = True
-        elif key == arcade.key.DOWN:
-            self.up_pressed = True
-        elif key == arcade.key.SPACE:
-            # find out if player is standing on ground
-            if self.physics_engine.is_on_ground(self.player_sprite):
+            # find out if player is standing on ground, and not on a ladder
+            if self.physics_engine.is_on_ground(self.player_sprite) \
+                    and not self.player_sprite.is_on_ladder:
                 # She is! Go ahead and jump
                 impulse = (0, PLAYER_JUMP_IMPULSE)
                 self.physics_engine.apply_impulse(self.player_sprite, impulse)
                 self.play_audio('jump.mp3')
+        elif key == arcade.key.DOWN:
+            self.up_pressed = True
+
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
@@ -385,7 +426,7 @@ class GameWindow(arcade.Window):
         # Update player forces based on keys pressed
         if self.left_pressed and not self.right_pressed:
             # Create a force to the left. Apply it.
-            if is_on_ground:
+            if is_on_ground or self.player_sprite.is_on_ladder:
                 force = (-PLAYER_MOVE_FORCE_ON_GROUND, 0)
             else:
                 force = (-PLAYER_MOVE_FORCE_IN_AIR, 0)
@@ -394,17 +435,27 @@ class GameWindow(arcade.Window):
             self.physics_engine.set_friction(self.player_sprite, 0)
         elif self.right_pressed and not self.left_pressed:
             # Create a force to the right. Apply it.
-            if is_on_ground:
+            if is_on_ground or self.player_sprite.is_on_ladder:
                 force = (PLAYER_MOVE_FORCE_ON_GROUND, 0)
             else:
                 force = (PLAYER_MOVE_FORCE_IN_AIR, 0)
             self.physics_engine.apply_force(self.player_sprite, force)
             # Set friction to zero for the player while moving
             self.physics_engine.set_friction(self.player_sprite, 0)
-        #elif self.up_pressed and not self.down_pressed:
-        #    self.scroll_viewport(force_up=True)
-        #elif self.down_pressed and not self.up_pressed:
-        #    self.scroll_viewport(force_down=True)
+        elif self.up_pressed and not self.down_pressed:
+            # Create a force to the right. Apply it.
+            if self.player_sprite.is_on_ladder:
+                force = (0, PLAYER_MOVE_FORCE_ON_GROUND)
+                self.physics_engine.apply_force(self.player_sprite, force)
+                # Set friction to zero for the player while moving
+                self.physics_engine.set_friction(self.player_sprite, 0)
+        elif self.down_pressed and not self.up_pressed:
+            # Create a force to the right. Apply it.
+            if self.player_sprite.is_on_ladder:
+                force = (0, -PLAYER_MOVE_FORCE_ON_GROUND)
+                self.physics_engine.apply_force(self.player_sprite, force)
+                # Set friction to zero for the player while moving
+                self.physics_engine.set_friction(self.player_sprite, 0)
         else:
             # Player's feet are not moving. Therefore up the friction so we stop.
             self.physics_engine.set_friction(self.player_sprite, 1.0)
@@ -431,7 +482,7 @@ class GameWindow(arcade.Window):
     def collect_fruit(self, fruit_list):
         for fruit in fruit_list:
             fruit.remove_from_sprite_lists()
-            self.fruit_power = self.fruit_power + 1
+            self.fruit_power = self.fruit_power + 100
             self.play_audio('fruit.mp3')
             self.show_fruit_power()
 
@@ -449,17 +500,28 @@ class GameWindow(arcade.Window):
         """ Draw everything """
         arcade.start_render()
         self.wall_list.draw()
-        self.bullet_list.draw()
+        self.trees_list.draw()
         self.item_list.draw()
         self.cannon_list.draw()
         self.fruit_list.draw()
         self.level_end_list.draw()
         self.player_list.draw()
 
-        # Draw the background texture
-        #arcade.draw_lrwh_rectangle_textured(0, 0,
-        #                                    SCREEN_WIDTH, SCREEN_HEIGHT,
-        #                                    self.background)
+        # score
+        score_text = f"Fruit Power: {self.fruit_power}"
+        arcade.draw_rectangle_filled(
+            self.view_left,
+            self.view_bottom,
+            350,
+            130,
+            arcade.color.BLACK
+        )
+        arcade.draw_text(score_text,
+                         10 + self.view_left,
+                         20 + self.view_bottom,
+                         arcade.color.WHITE,
+                         15
+        ) 
 
     def scroll_viewport(self, force_down=False, force_up=False):
         """ Manage scrolling of the viewport. """
@@ -497,32 +559,6 @@ class GameWindow(arcade.Window):
                                 self.view_bottom,
                                 SCREEN_HEIGHT + self.view_bottom)
 
-
-"""class MessageWindow(arcade.Window):
-    def __init__(self, text, color=arcade.color.AMETHYST):
-        super().__init__(800, 600)
-        self.text = text
-        self.color = color
-        self.center_x = self.width / 2
-        self.center_y = self.height / 2
-
-    def setup(self):
-        arcade.set_background_color(self.color)
-        self.text_list.append(arcade.TextLabel(self.text, self.center_x - 225, self.center_y))
-        self.textbox_list.append(arcade.TextBox(self.center_x - 125, self.center_y))
-        #self.button_list.append(arcade.SubmitButton(self.textbox_list[0], self.on_submit,
-        #                                            self.center_x,
-        #                                            self.center_y))
-
-    def on_draw(self):
-        arcade.start_render()
-        super().on_draw()
-        arcade.draw_text(f"Hello {self.text}", 400, 100, arcade.color.BLACK, 24)
-
-    def on_submit(self):
-        self.text = self.textbox_list[0].text_storage.text
-"""
-
 class LevelSelectButton(arcade.gui.UIFlatButton):
     """
     To capture a button click, subclass the button and override on_click.
@@ -534,8 +570,7 @@ class LevelSelectButton(arcade.gui.UIFlatButton):
 
     def on_click(self):
         self.menu.run_level(self.map_name)
-
-
+        
 class MainMenu(arcade.View):
     def __init__(self):
         self.ui_manager = arcade.gui.UIManager()
@@ -571,7 +606,7 @@ class MainMenu(arcade.View):
                 # height=20,
                 anchor_x="center"
             )
-            self.ui_manager.add_ui_element(button)   # something about this is extremely slow
+            self.ui_manager.add_ui_element(button)  
             start = start + 40
 
     @staticmethod
@@ -580,10 +615,10 @@ class MainMenu(arcade.View):
         sys.exit()
 
     def run_level(self, map_name):
-        game_view = GameWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        game_view = GameView()
         game_view.setup(map_name=map_name)
-        #.window.close()  # workaround as keepign this open is causing a loop/slowdowns
         self.window.show_view(game_view)
+        self.ui_manager.unregister_handlers()
 
 
 def main():
@@ -591,7 +626,6 @@ def main():
     game_window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     main_menu = MainMenu()
     game_window.show_view(main_menu)
-    #game_window.setup()
     arcade.run()
 
 
