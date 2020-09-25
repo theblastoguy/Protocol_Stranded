@@ -41,7 +41,7 @@ VIEWPORT_MARGIN_TOP_BOTTOM = SPRITE_SIZE * 6
 # --- Physics forces. Higher number, faster accelerating.
 
 # Gravity
-GRAVITY = 800
+GRAVITY = 600
 
 # Damping - Amount of speed lost per second
 DEFAULT_DAMPING = 1.0
@@ -56,8 +56,8 @@ DYNAMIC_ITEM_FRICTION = 0.6
 PLAYER_MASS = 1
 
 # Keep player from going too fast
-PLAYER_MAX_HORIZONTAL_SPEED = 450
-PLAYER_MAX_VERTICAL_SPEED = 1600
+PLAYER_MAX_HORIZONTAL_SPEED = 300
+PLAYER_MAX_VERTICAL_SPEED = 500
 
 # Force applied while on the ground
 PLAYER_MOVE_FORCE_ON_GROUND = 8000
@@ -177,7 +177,6 @@ class PlayerSprite(arcade.Sprite):
         if self.is_on_ladder and not is_on_ground:
             # Have we moved far enough to change the texture?
             if abs(self.y_odometer) > DISTANCE_TO_CHANGE_TEXTURE:
-
                 # Reset the odometer
                 self.y_odometer = 0
 
@@ -236,6 +235,7 @@ class GameView(arcade.View):
         # Sprite lists we need
         self.player_list: Optional[arcade.SpriteList] = None
         self.wall_list: Optional[arcade.SpriteList] = None
+        self.water_list: Optional[arcade.SpriteList] = None
         self.item_list: Optional[arcade.SpriteList] = None
         self.fruit_list: Optional[arcade.SpriteList] = None
         self.trees_list = None
@@ -283,6 +283,7 @@ class GameView(arcade.View):
 
         # Read in the map layers
         self.wall_list = arcade.tilemap.process_layer(my_map, 'Solid Platforms', SPRITE_SCALING_TILES)
+        self.water_list = arcade.tilemap.process_layer(my_map, 'Water', SPRITE_SCALING_TILES)
         self.item_list = arcade.tilemap.process_layer(my_map, 'Movable Items', SPRITE_SCALING_TILES)
         self.cannon_list = arcade.tilemap.process_layer(my_map, 'Cannons', SPRITE_SCALING_TILES)
         self.fruit_list = arcade.tilemap.process_layer(my_map, 'Fruit', SPRITE_SCALING_TILES)
@@ -363,6 +364,11 @@ class GameView(arcade.View):
                                             friction=WALL_FRICTION,
                                             collision_type="wall",
                                             body_type=arcade.PymunkPhysicsEngine.STATIC)
+        # Create the water                                   
+        self.physics_engine.add_sprite_list(self.water_list,
+                                            friction=WALL_FRICTION,
+                                            collision_type="water",
+                                            body_type=arcade.PymunkPhysicsEngine.STATIC)                                    
 
         # Create the items
         self.physics_engine.add_sprite_list(self.item_list,
@@ -473,6 +479,10 @@ class GameView(arcade.View):
         if arcade.check_for_collision_with_list(self.player_sprite, self.level_end_list):
             self.end_level()
 
+        # Check if we are touching water
+        if arcade.check_for_collision_with_list(self.player_sprite, self.water_list):
+            self.player_sprite.splat()
+
         # Scroll the viewport if needed
         self.scroll_viewport()
 
@@ -500,6 +510,7 @@ class GameView(arcade.View):
         """ Draw everything """
         arcade.start_render()
         self.wall_list.draw()
+        self.water_list.draw()
         self.trees_list.draw()
         self.item_list.draw()
         self.cannon_list.draw()
