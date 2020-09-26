@@ -7,6 +7,7 @@ import arcade
 import arcade.gui
 import logging
 import sys
+import time
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -77,6 +78,10 @@ LEFT_FACING = 1
 
 # How many pixels to move before we change the texture in the walking animation
 DISTANCE_TO_CHANGE_TEXTURE = 20
+
+# Music file
+MUSIC_FILE = "resources/sounds/level1.mp3"
+MUSIC_VOLUME = 0.2
 
 class PlayerSprite(arcade.Sprite):
     """ Player Sprite """
@@ -247,6 +252,9 @@ class GameView(arcade.View):
         self.up_pressed: bool = False
         self.down_pressed: bool = False
 
+        # Is music playing
+        self.music = None
+
         # Background image will be stored in this variable
         self.background = None
 
@@ -295,8 +303,6 @@ class GameView(arcade.View):
 
         try:
             player_start_tilemap_objs = arcade.tilemap.get_tilemap_layer(my_map, 'Player Start').tiled_objects
-            if len(player_start_tilemap_objs) != 1:
-                raise AttributeError()
             player_start_location = player_start_tilemap_objs[0].location
         except (IndexError, AttributeError, TypeError):
             raise Exception("Missing or duplicate Player Start location in map {}, please fix".format(my_map.tmx_file))
@@ -389,6 +395,18 @@ class GameView(arcade.View):
         self.physics_engine.add_sprite_list(self.level_end_list,
                                             collision_type="level_end",
                                             body_type=arcade.PymunkPhysicsEngine.STATIC)
+
+        # Play the background music
+        self.play_song()
+
+    def play_song(self):
+        """Play background music"""
+
+        if self.music:
+            self.music.stop()
+        self.music = arcade.Sound(MUSIC_FILE, streaming=True)
+        self.music.play(volume=MUSIC_VOLUME)
+        time.sleep(0.03)
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
